@@ -12,15 +12,16 @@ class AskCsdnSpider(scrapy.Spider):
 
     #解析CSDN已解决问答URL,下一页
     def parse(self, response):
-
-        is_out_of_date = False;
+        #时间是否过期标志位
+        is_out_of_date = False
         for index,time_ele in enumerate(response.xpath("//div[@class='q_time']/span")):
             page_time = time_ele.xpath("text()").extract()[0]
             page_time = page_time.split(" ")[0]
             print("time = ", page_time)
-            #对比时间
-            if self.timecompare(page_time, 2) == True:
+            #对比时间 page_time:网页获取时间字符串 iday:过去几天,默认2,只爬取最近2天更新的
+            if self.timecompare(page_time, iday = 2) == True:
                 list = response.xpath("//div[@class='questions_detail_con']/dl/dt/a")[index]
+                #问题url以及标题
                 url = list.xpath("@href").extract()[0]
                 title = list.xpath("text()").extract()[0]
                 #新建问题
@@ -32,28 +33,13 @@ class AskCsdnSpider(scrapy.Spider):
 
                 print("url = ", url)
                 print("title = ", title)
+
                 yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
             else:
-                is_out_of_date = True;
+                is_out_of_date = True
                 continue
 
-
-
-        # for list in response.xpath("//div[@class='questions_detail_con']/dl/dt/a"):
-        #     url = list.xpath("@href").extract()[0]
-        #     title = list.xpath("text()").extract()[0]
-        #     #新建问题
-        #     q_item = QuestionItem()
-        #     q_item['reprint_link'] = url
-        #     q_item['title'] = title
-        #     q_item['user_id'] = 1
-        #     q_item['votes'] = 0
-        #
-        #     print("问题标题:")
-        #     print(title)
-        #
-        #     yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
-
+        #时间不在范围内直接中止爬虫
         if is_out_of_date == True:
             return
         else:
