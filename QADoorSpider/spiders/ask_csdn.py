@@ -13,11 +13,13 @@ class AskCsdnSpider(scrapy.Spider):
     #解析CSDN已解决问答URL,下一页
     def parse(self, response):
 
+        is_out_of_date = False;
         for index,time_ele in enumerate(response.xpath("//div[@class='q_time']/span")):
             page_time = time_ele.xpath("text()").extract()[0]
             page_time = page_time.split(" ")[0]
+            print("time = ", page_time)
             #对比时间
-            if self.timecompare(page_time, 1) == True:
+            if self.timecompare(page_time, 2) == True:
                 list = response.xpath("//div[@class='questions_detail_con']/dl/dt/a")[index]
                 url = list.xpath("@href").extract()[0]
                 title = list.xpath("text()").extract()[0]
@@ -32,7 +34,8 @@ class AskCsdnSpider(scrapy.Spider):
                 print("title = ", title)
                 yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
             else:
-                return
+                is_out_of_date = True;
+                continue
 
 
 
@@ -51,12 +54,15 @@ class AskCsdnSpider(scrapy.Spider):
         #
         #     yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
 
-        #判断是否还有下一页
-        lastpage = response.xpath("//span[@class='page-nav']/a[last()]/text()").extract()[0]
-        if (lastpage == unicode('尾页','utf-8')):
-            nextpage_url = response.xpath("//span[@class='page-nav']/a[last()-1]/@href").extract()[0]
-            inner_url = "http://ask.csdn.net" + nextpage_url;
-            yield scrapy.Request(inner_url, callback = self.parse)
+        if is_out_of_date == True:
+            return
+        else:
+            #判断是否还有下一页
+            lastpage = response.xpath("//span[@class='page-nav']/a[last()]/text()").extract()[0]
+            if (lastpage == unicode('尾页','utf-8')):
+                nextpage_url = response.xpath("//span[@class='page-nav']/a[last()-1]/@href").extract()[0]
+                inner_url = "http://ask.csdn.net" + nextpage_url;
+                yield scrapy.Request(inner_url, callback = self.parse)
 
     def parse_answer(self, response):
         #接收从上个request发来的item

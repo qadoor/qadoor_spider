@@ -15,6 +15,7 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):
     def process_request(self, request, spider):
         ua = random.choice(self.user_agent_list)
         if ua:
+            # print("UserAgent = ", ua)
             request.headers.setdefault('User-Agent', ua)
         # agent = random.choice(agents_mobile)
         # request.headers["User-Agent"] = agent
