@@ -191,6 +191,9 @@ class QadoorspiderPipeline(object):
 
             try:
                 session.commit()
-            except:
+            except Exception as e:
                 print "Error Commit!!!"
+                session.rollback()
+                session.flush() # for resetting non-commited .add()
+
             return item

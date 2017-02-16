@@ -13,6 +13,7 @@ BOT_NAME = 'QADoorSpider'
 
 SPIDER_MODULES = ['QADoorSpider.spiders']
 NEWSPIDER_MODULE = 'QADoorSpider.spiders'
+DOWNLOAD_TIMEOUT = 600
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

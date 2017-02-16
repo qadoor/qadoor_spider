@@ -10,45 +10,73 @@ class AskCsdnSpider(scrapy.Spider):
     allowed_domains = ["ask.csdn.net"]
     start_urls = ['http://ask.csdn.net/?type=resolved']
 
-    #解析CSDN已解决问答URL,下一页
+    # #解析CSDN已解决问答URL,下一页(带日期判断版本)
+    # def parse(self, response):
+    #     #带时间判断版本
+    #     #时间是否过期标志位
+    #     is_out_of_date = False
+    #     for index,time_ele in enumerate(response.xpath("//div[@class='q_time']/span")):
+    #         page_time = time_ele.xpath("text()").extract()[0]
+    #         page_time = page_time.split(" ")[0]
+    #         print("time = ", page_time)
+    #         #对比时间 page_time:网页获取时间字符串 iday:过去几天,默认2,只爬取最近2天更新的
+    #         if self.timecompare(page_time, iday = 2) == True:
+    #             list = response.xpath("//div[@class='questions_detail_con']/dl/dt/a")[index]
+    #             #问题url以及标题
+    #             url = list.xpath("@href").extract()[0]
+    #             title = list.xpath("text()").extract()[0]
+    #             #新建问题
+    #             q_item = QuestionItem()
+    #             q_item['reprint_link'] = url
+    #             q_item['title'] = title
+    #             q_item['user_id'] = 1
+    #             q_item['votes'] = 0
+    #
+    #             print("url = ", url)
+    #             print("title = ", title)
+    #
+    #             yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
+    #         else:
+    #             is_out_of_date = True
+    #             continue
+    #
+    #     #时间不在范围内直接中止爬虫
+    #     if is_out_of_date == True:
+    #         return
+    #     else:
+    #         #判断是否还有下一页
+    #         lastpage = response.xpath("//span[@class='page-nav']/a[last()]/text()").extract()[0]
+    #         if (lastpage == unicode('尾页','utf-8')):
+    #             nextpage_url = response.xpath("//span[@class='page-nav']/a[last()-1]/@href").extract()[0]
+    #             inner_url = "http://ask.csdn.net" + nextpage_url;
+    #             yield scrapy.Request(inner_url, callback = self.parse)
+
+    #解析CSDN已解决问答URL,下一页(不带日期判断版本)
     def parse(self, response):
-        #时间是否过期标志位
-        is_out_of_date = False
-        for index,time_ele in enumerate(response.xpath("//div[@class='q_time']/span")):
-            page_time = time_ele.xpath("text()").extract()[0]
-            page_time = page_time.split(" ")[0]
-            print("time = ", page_time)
-            #对比时间 page_time:网页获取时间字符串 iday:过去几天,默认2,只爬取最近2天更新的
-            if self.timecompare(page_time, iday = 2) == True:
-                list = response.xpath("//div[@class='questions_detail_con']/dl/dt/a")[index]
-                #问题url以及标题
-                url = list.xpath("@href").extract()[0]
-                title = list.xpath("text()").extract()[0]
-                #新建问题
-                q_item = QuestionItem()
-                q_item['reprint_link'] = url
-                q_item['title'] = title
-                q_item['user_id'] = 1
-                q_item['votes'] = 0
+        #不带时间判断版本
+        for list in response.xpath("//div[@class='questions_detail_con']/dl/dt/a"):
+            #问题url以及标题
+            url = list.xpath("@href").extract()[0]
+            title = list.xpath("text()").extract()[0]
+            #新建问题
+            q_item = QuestionItem()
+            q_item['reprint_link'] = url
+            q_item['title'] = title
+            q_item['user_id'] = 1
+            q_item['votes'] = 0
 
-                print("url = ", url)
-                print("title = ", title)
+            print("url = ", url)
+            print("title = ", title)
 
-                yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
-            else:
-                is_out_of_date = True
-                continue
+            yield scrapy.Request(url, meta={'item': q_item}, callback = self.parse_answer)
 
-        #时间不在范围内直接中止爬虫
-        if is_out_of_date == True:
-            return
-        else:
-            #判断是否还有下一页
-            lastpage = response.xpath("//span[@class='page-nav']/a[last()]/text()").extract()[0]
-            if (lastpage == unicode('尾页','utf-8')):
-                nextpage_url = response.xpath("//span[@class='page-nav']/a[last()-1]/@href").extract()[0]
-                inner_url = "http://ask.csdn.net" + nextpage_url;
-                yield scrapy.Request(inner_url, callback = self.parse)
+        #判断是否还有下一页
+        lastpage = response.xpath("//span[@class='page-nav']/a[last()]/text()").extract()[0]
+        if (lastpage == unicode('尾页','utf-8')):
+            nextpage_url = response.xpath("//span[@class='page-nav']/a[last()-1]/@href").extract()[0]
+            inner_url = "http://ask.csdn.net" + nextpage_url;
+            yield scrapy.Request(inner_url, callback = self.parse)
+
 
     def parse_answer(self, response):
         #接收从上个request发来的item
